@@ -3,6 +3,7 @@ name = "astrum"
 version = "0.0.0"
 edition = "2024"
 description = "A one-dimensional stellar structure solver."
+repository = "https://github.com/mihirmanna/astrum"
 license = "MIT"
 
 [dependencies]
