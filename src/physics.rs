@@ -145,6 +145,63 @@ impl EquationOfState for IdealGasEos {
     }
 }
 
+/// An equation of state accounting for hydrogen ionization via the Saha equation.
+///
+/// Uses the standard dilute-gas Saha equation (no pressure-ionization or degeneracy corrections).
+/// For simplicity, helium and metals are treated as fully ionized.
+pub struct SahaEos;
+
+impl SahaEos {
+    /// Hydrogen ionization fraction (0.0 = fully neutral, 1.0 = fully ionized) at a given hydrogen
+    /// number density and temperature. Uses a closed-form solution of the Saha equation (see
+    /// [here](https://en.wikipedia.org/wiki/Saha_ionization_equation#Description)).
+    fn hydrogen_ionization_fraction(&self, n_hydrogen: f64, temperature: f64) -> f64 {
+        if n_hydrogen <= 0.0 {
+            return 1.0; // Treat vacuum as fully ionized
+        }
+
+        let lambda_th = H_PLANCK / (2.0 * PI * M_E * K_B * temperature).sqrt();
+        let a = 2.0 / (n_hydrogen * lambda_th.powi(3)) * (-PHI_H / (K_B * temperature)).exp();
+
+        // Positive root of x^2 + ax - a = 0.
+        let x = 0.5 * a * ((1.0 + 4.0 / a).sqrt() - 1.0);
+        x.clamp(0.0, 1.0)
+    }
+
+    /// Estimated total particle number density (neutral H, ionized H, free electrons, plus helium
+    /// and metals assumed fully ionized) at a given density and temperature.
+    fn number_density(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
+        let n_hydrogen = density * composition.x * N_A; // A_H = 1
+        let n_helium = density * composition.y * N_A / 4.0; // A_He = 4
+        let n_metals = density * composition.z * N_A / 16.0; // Assume typical A_Z = 16
+
+        let x = self.hydrogen_ionization_fraction(n_hydrogen, temperature);
+
+        // Hydrogen: (1-x) neutral atoms + x protons + x electrons = 1 + x
+        // Helium: 1 nucleus + 2 electrons = 3
+        // Metals: 1 nucleus + 8 electrons = 9 (assume nucleons are balanced, so Z = A_Z / 2 = 8)
+        n_hydrogen * (1.0 + x) + n_helium * 3.0 + n_metals * 9.0
+    }
+}
+
+impl EquationOfState for SahaEos {
+    fn pressure(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
+        let n_total = self.number_density(density, temperature, composition);
+        n_total * K_B * temperature
+    }
+
+    fn adiabatic_gradient(
+        &self,
+        _density: f64,
+        _temperature: f64,
+        _composition: Composition,
+    ) -> f64 {
+        // Placeholder value: fully ionized monatomic ideal gas
+        // FIXME: Partial ionization should depress this result below the ideal gas value
+        0.4
+    }
+}
+
 /// Kramers' opacity law, appropriate for bound-free and free-free absorption in moderately high
 /// temperature stellar interiors.
 pub struct KramersOpacity;
