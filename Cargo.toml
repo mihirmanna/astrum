@@ -7,3 +7,4 @@ repository = "https://github.com/mihirmanna/astrum"
 license = "MIT"
 
 [dependencies]
+thiserror = "2.0.19"
