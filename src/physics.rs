@@ -128,7 +128,10 @@ impl IdealGasEos {
 
 impl EquationOfState for IdealGasEos {
     fn pressure(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
-        (density * R_GAS * temperature) / composition.mean_molecular_weight()
+        let p_gas = (density * R_GAS * temperature) / composition.mean_molecular_weight();
+        let p_rad = A_RAD * temperature.powi(4) / 3.0;
+
+        p_gas + p_rad
     }
 
     fn adiabatic_gradient(
@@ -141,7 +144,10 @@ impl EquationOfState for IdealGasEos {
     }
 
     fn density(&self, pressure: f64, temperature: f64, composition: Composition) -> f64 {
-        composition.mean_molecular_weight() * pressure / (R_GAS * temperature)
+        let p_rad = A_RAD * temperature.powi(4) / 3.0;
+        let p_gas = pressure - p_rad;
+
+        composition.mean_molecular_weight() * p_gas / (R_GAS * temperature)
     }
 }
 
@@ -187,7 +193,10 @@ impl SahaEos {
 impl EquationOfState for SahaEos {
     fn pressure(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
         let n_total = self.number_density(density, temperature, composition);
-        n_total * K_B * temperature
+        let p_gas = n_total * K_B * temperature;
+        let p_rad = A_RAD * temperature.powi(4) / 3.0;
+
+        p_gas + p_rad
     }
 
     fn adiabatic_gradient(
