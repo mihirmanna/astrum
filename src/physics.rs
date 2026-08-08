@@ -134,13 +134,12 @@ impl EquationOfState for IdealGasEos {
         p_gas + p_rad
     }
 
-    fn adiabatic_gradient(
-        &self,
-        _density: f64,
-        _temperature: f64,
-        _composition: Composition,
-    ) -> f64 {
-        (self.gamma - 1.0) / self.gamma
+    fn adiabatic_gradient(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
+        let p_rad = A_RAD * temperature.powi(4) / 3.0;
+        let beta = 1.0 - p_rad / self.pressure(density, temperature, composition);
+        let a = beta / (self.gamma - 1.0) + 12.0 * (1.0 - beta);
+
+        (4.0 - 3.0 * beta) / (beta * a + (4.0 - 3.0 * beta).powi(2))
     }
 
     fn density(&self, pressure: f64, temperature: f64, composition: Composition) -> f64 {
