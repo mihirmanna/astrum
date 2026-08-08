@@ -198,15 +198,39 @@ impl EquationOfState for SahaEos {
         p_gas + p_rad
     }
 
-    fn adiabatic_gradient(
-        &self,
-        _density: f64,
-        _temperature: f64,
-        _composition: Composition,
-    ) -> f64 {
-        // Placeholder value: fully ionized monatomic ideal gas
-        // FIXME: Partial ionization should depress this result below the ideal gas value
-        0.4
+    fn adiabatic_gradient(&self, density: f64, temperature: f64, composition: Composition) -> f64 {
+        let n_hydrogen = density * composition.x * N_A;
+        let n_total = self.number_density(density, temperature, composition);
+        let mean_molecular_weight = N_A * density / n_total;
+        let x = self.hydrogen_ionization_fraction(n_hydrogen, temperature);
+
+        // Specific pressure contributions
+        let p_gas = n_total * K_B * temperature;
+        let p_tot = self.pressure(density, temperature, composition);
+        let beta = p_gas / p_tot;
+
+        // Specific energy contributions
+        let u_gas = 1.5 * p_gas / density; // Assume 3 (translational) degrees of freedom
+        let u_rad = A_RAD * temperature.powi(4) / density;
+
+        let saha_temperature_term = 1.5 + PHI_H / (K_B * temperature);
+        let ionization_susceptibility = x * (1.0 - x) / (2.0 - x);
+        let du_dx = u_gas * composition.x * mean_molecular_weight + composition.x * N_A * PHI_H;
+
+        // dln(T) / dln(rho) from adiabatic relation
+        let dln_t_dln_rho = (u_rad + p_tot / density + du_dx * ionization_susceptibility)
+            / (u_gas + 4.0 * u_rad + du_dx * ionization_susceptibility * saha_temperature_term);
+
+        // dln(P) / dln(rho) from equation of state
+        let dln_p_dln_rho = beta
+            + (4.0 - 3.0 * beta) * dln_t_dln_rho
+            + beta
+                * composition.x
+                * ionization_susceptibility
+                * mean_molecular_weight
+                * (saha_temperature_term * dln_t_dln_rho - 1.0);
+
+        dln_t_dln_rho / dln_p_dln_rho
     }
 }
 
