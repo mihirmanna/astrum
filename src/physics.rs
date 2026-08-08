@@ -169,7 +169,7 @@ impl SahaEos {
         let a = 2.0 / (n_hydrogen * lambda_th.powi(3)) * (-CHI_H / (K_B * temperature)).exp();
 
         // Positive root of x^2 + ax - a = 0.
-        let x = 0.5 * a * ((1.0 + 4.0 / a).sqrt() - 1.0);
+        let x = 2.0 / (1.0 + (1.0 + 4.0 / a).sqrt());
         x.clamp(0.0, 1.0)
     }
 
