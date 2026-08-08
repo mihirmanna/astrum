@@ -25,4 +25,4 @@ pub(crate) const M_E: f64 = 9.1093837139e-28;
 pub(crate) const N_A: f64 = 6.02214076e23;
 
 /// Hydrogen ionization energy measured in erg
-pub(crate) const PHI_H: f64 = 2.179872361103e-11;
+pub(crate) const CHI_H: f64 = 2.179872361103e-11;

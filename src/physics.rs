@@ -166,7 +166,7 @@ impl SahaEos {
         }
 
         let lambda_th = H_PLANCK / (2.0 * PI * M_E * K_B * temperature).sqrt();
-        let a = 2.0 / (n_hydrogen * lambda_th.powi(3)) * (-PHI_H / (K_B * temperature)).exp();
+        let a = 2.0 / (n_hydrogen * lambda_th.powi(3)) * (-CHI_H / (K_B * temperature)).exp();
 
         // Positive root of x^2 + ax - a = 0.
         let x = 0.5 * a * ((1.0 + 4.0 / a).sqrt() - 1.0);
@@ -213,9 +213,9 @@ impl EquationOfState for SahaEos {
         let u_gas = 1.5 * p_gas / density; // Assume 3 (translational) degrees of freedom
         let u_rad = A_RAD * temperature.powi(4) / density;
 
-        let saha_temperature_term = 1.5 + PHI_H / (K_B * temperature);
+        let saha_temperature_term = 1.5 + CHI_H / (K_B * temperature);
         let ionization_susceptibility = x * (1.0 - x) / (2.0 - x);
-        let du_dx = u_gas * composition.x * mean_molecular_weight + composition.x * N_A * PHI_H;
+        let du_dx = u_gas * composition.x * mean_molecular_weight + composition.x * N_A * CHI_H;
 
         // dln(T) / dln(rho) from adiabatic relation
         let dln_t_dln_rho = (u_rad + p_tot / density + du_dx * ionization_susceptibility)
